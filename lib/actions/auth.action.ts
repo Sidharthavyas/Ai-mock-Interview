@@ -114,3 +114,104 @@ export async function isAuthenticated(){
     const user = await getCurrentUser()
     return !!user;
 }
+
+
+
+
+
+export async function getLatestInterviews(
+  params: GetLatestInterviewsParams
+): Promise<Interview[] | null> {
+  const { userId, limit = 20 } = params;
+
+  const interviews = await db
+    .collection("interviews")
+    .orderBy("createdAt", "desc")
+    .where("finalized", "==", true)
+    .where("userId", "!=", userId)
+    .limit(limit)
+    .get();
+
+  return interviews.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Interview[];
+}
+
+
+
+
+export async function getInterviewsByUserId(
+  userId: string
+): Promise<Interview[] | null> {
+  console.log('🔍 getInterviewsByUserId called with userId:', userId);
+  
+  try {
+    const interviews = await db
+      .collection("interviews")
+    //  .where("userId", "==", userId)
+    //  .orderBy("createdAt", "desc")
+      .get();
+
+    console.log('📊 Firestore query results:');
+    console.log('- Number of documents found:', interviews.size);
+    console.log('- Query executed successfully:', !interviews.empty);
+
+    if (interviews.empty) {
+      console.log('❌ No interviews found for user:', userId);
+      
+      // Let's also check if there are ANY interviews in the collection
+      const allInterviews = await db.collection("interviews").limit(1).get();
+      console.log('🔍 Total interviews in collection (first 5):', allInterviews.size);
+      
+      if (!allInterviews.empty) {
+        allInterviews.forEach(doc => {
+          const data = doc.data();
+          console.log('📄 Sample interview:', {
+            id: doc.id,
+            userId: data.userId,
+            role: data.role,
+            createdAt: data.createdAt
+          });
+        });
+      }
+      
+      return [];
+    }
+
+    const interviewData = interviews.docs.map((doc) => {
+      const data = doc.data();
+      console.log('📋 Processing interview:', {
+        id: doc.id,
+        userId: data.userId,
+        role: data.role,
+        type: data.type,
+        createdAt: data.createdAt,
+        finalized: data.finalized
+      });
+      
+      return {
+        id: doc.id,
+        ...data,
+      };
+    }) as Interview[];
+
+    console.log('✅ Returning interview data:', interviewData.length, 'interviews');
+    return interviewData;
+    
+  } catch (error) {
+    console.error('❌ Error in getInterviewsByUserId:', error);
+    
+    // Check if it's a Firestore permissions error
+    if (error.code === 'permission-denied') {
+      console.error('🚨 Firestore permission denied - check your security rules');
+    }
+    
+    // Check if it's an index error
+    if (error.message?.includes('index')) {
+      console.error('🚨 Firestore index missing - you may need to create an index for userId + createdAt');
+    }
+    
+    return null;
+  }
+}
