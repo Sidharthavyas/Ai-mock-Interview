@@ -149,8 +149,8 @@ export async function getInterviewsByUserId(
   try {
     const interviews = await db
       .collection("interviews")
-    //  .where("userId", "==", userId)
-    //  .orderBy("createdAt", "desc")
+      .where("userId", "==", userId)
+     .orderBy("createdAt", "desc")
       .get();
 
     console.log('📊 Firestore query results:');

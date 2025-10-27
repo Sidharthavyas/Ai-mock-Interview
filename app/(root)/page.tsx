@@ -1,6 +1,7 @@
+// app/(root)/page.tsx
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from 'next/navigation'; // <--- Add this import!
+import { redirect } from 'next/navigation';
 
 import { Button } from "@/components/ui/button";
 import InterviewCard from "@/components/InterviewCard";
@@ -14,20 +15,17 @@ import {
 async function Home() {
   const user = await getCurrentUser();
 
-  
   if (!user || !user.id) {
     redirect('/sign-in');
   }
-  
 
-  
   const [userInterviews, latestInterviews] = await Promise.all([
-    getInterviewsByUserId(user.id), // Pass the guaranteed valid user.id
-    getLatestInterviews({ userId: user.id }), // Same here
+    getInterviewsByUserId(user.id),
+    getLatestInterviews({ userId: user.id }),
   ]);
 
-  const hasPastInterviews = userInterviews?.length! > 0;
-  const hasUpcomingInterviews = latestInterviews?.length! > 0;
+  const hasPastInterviews = userInterviews && userInterviews.length > 0;
+  const hasUpcomingInterviews = latestInterviews && latestInterviews.length > 0;
 
   return (
     <>
@@ -57,12 +55,11 @@ async function Home() {
 
         <div className="interviews-section">
           {hasPastInterviews ? (
-            userInterviews?.map((interview) => (
+            userInterviews.map((interview) => (
               <InterviewCard
-              {...interview}
-                    key={interview.id}
-                userId={user?.id}
+                key={interview.id}
                 interviewId={interview.id}
+                userId={interview.userId}
                 role={interview.role}
                 type={interview.type}
                 techstack={interview.techstack}
@@ -80,10 +77,15 @@ async function Home() {
 
         <div className="interviews-section">
           {hasUpcomingInterviews ? (
-            latestInterviews?.map((interview) => (
+            latestInterviews.map((interview) => (
               <InterviewCard
-               {...interview}
-               key={interview.id}
+                key={interview.id}
+                interviewId={interview.id}
+                userId={interview.userId}
+                role={interview.role}
+                type={interview.type}
+                techstack={interview.techstack}
+                createdAt={interview.createdAt}
               />
             ))
           ) : (
