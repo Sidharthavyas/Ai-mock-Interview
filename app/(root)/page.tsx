@@ -1,16 +1,16 @@
-// app/(root)/page.tsx
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from 'next/navigation';
 
 import { Button } from "@/components/ui/button";
 import InterviewCard from "@/components/InterviewCard";
+import LogoutButton from "@/components/LogoutButton";
 
 import { getCurrentUser } from "@/lib/actions/auth.action";
 import {
   getInterviewsByUserId,
   getLatestInterviews,
-} from "@/lib/actions/auth.action";
+} from "@/lib/actions/general.action";
 
 async function Home() {
   const user = await getCurrentUser();
@@ -29,6 +29,27 @@ async function Home() {
 
   return (
     <>
+      {/* Header with User Info and Logout */}
+      <div className="flex justify-between items-center mb-8 p-4 bg-white dark:bg-dark-300 rounded-lg shadow-sm border border-gray-200 dark:border-dark-200">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Image
+              src="/user-avatar.png"
+              alt="User Avatar"
+              width={48}
+              height={48}
+              className="rounded-full object-cover ring-2 ring-primary-100"
+            />
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+          </div>
+          <div>
+            <p className="font-semibold text-lg">{user.name}</p>
+            <p className="text-sm text-gray-500">{user.email}</p>
+          </div>
+        </div>
+        <LogoutButton />
+      </div>
+
       <section className="card-cta">
         <div className="flex flex-col gap-6 max-w-lg">
           <h2>Get Interview-Ready with AI-Powered Practice & Feedback</h2>
@@ -58,7 +79,7 @@ async function Home() {
             userInterviews.map((interview) => (
               <InterviewCard
                 key={interview.id}
-                interviewId={interview.id}
+                id={interview.id}
                 userId={interview.userId}
                 role={interview.role}
                 type={interview.type}
@@ -80,7 +101,7 @@ async function Home() {
             latestInterviews.map((interview) => (
               <InterviewCard
                 key={interview.id}
-                interviewId={interview.id}
+                id={interview.id}
                 userId={interview.userId}
                 role={interview.role}
                 type={interview.type}
