@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { redirect } from 'next/navigation';
 import React, { ReactNode } from 'react'
 
+export const dynamic = 'force-dynamic';
+
 const AuthLayout = async({ children }: { children: ReactNode }) => {
   try {
     const session = await auth.api.getSession({
