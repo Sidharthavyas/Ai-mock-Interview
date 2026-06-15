@@ -46,15 +46,25 @@ export type Session = typeof auth.$Infer.Session;
 export type User = typeof auth.$Infer.Session.user;
 
 export async function isAuthenticated(): Promise<boolean> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  return !!session?.user;
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    return !!session?.user;
+  } catch (error) {
+    console.error("isAuthenticated error:", error);
+    return false;
+  }
 }
 
 export async function getCurrentUser() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  return session?.user || null;
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    return session?.user || null;
+  } catch (error) {
+    console.error("getCurrentUser error:", error);
+    return null;
+  }
 }

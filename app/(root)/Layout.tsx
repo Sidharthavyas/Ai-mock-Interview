@@ -5,11 +5,18 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import React, { ReactNode } from 'react'
 
+export const dynamic = 'force-dynamic';
+
 const RootLayout = async({ children }: { children: ReactNode }) => {
-  const isUserAuthenticated = await isAuthenticated();
-  
-  if (!isUserAuthenticated) {
-    redirect('/sign-in')
+  try {
+    const isUserAuthenticated = await isAuthenticated();
+    
+    if (!isUserAuthenticated) {
+      redirect('/sign-in')
+    }
+  } catch (error) {
+    console.error('RootLayout - Error checking auth:', error);
+    redirect('/sign-in');
   }
   
   return (

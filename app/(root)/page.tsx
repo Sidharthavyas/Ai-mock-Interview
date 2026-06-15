@@ -11,13 +11,24 @@ import {
   getLatestInterviews,
 } from "@/lib/actions/general.action";
 
-async function Home() {
-  // The RootLayout already handles authentication, so we don't need to check again
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+import { redirect } from "next/navigation";
 
-  const user = session!.user; // We know user exists because RootLayout handles redirect
+async function Home() {
+  let session;
+  try {
+    session = await auth.api.getSession({
+      headers: await headers(),
+    });
+  } catch (error) {
+    console.error("Home - Error getting session:", error);
+    redirect("/sign-in");
+  }
+
+  if (!session?.user) {
+    redirect("/sign-in");
+  }
+
+  const user = session.user;
 
   const [userInterviews, latestInterviews] = await Promise.all([
     getInterviewsByUserId(user.id),
