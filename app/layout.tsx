@@ -1,17 +1,18 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Mona_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
-const monaSans = Mona_Sans({
+const monaSans = Mona_Sans({ 
   subsets: ["latin"],
+  variable: "--font-mona-sans",
+  display: "swap",
 });
 
-
-
 export const metadata: Metadata = {
-  title: "Skillhance",
-  description: "An AI-Powered platform for preparing for mock interviews ",
+  title: "AI Interview Platform",
+  description: "Practice interviews with AI",
 };
 
 export default function RootLayout({
@@ -20,10 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${monaSans.className} antialiased pattern`} >
+    <html lang="en" className="dark">
+      <body className={monaSans.className}>
         {children}
-        <Toaster/>
+        <Toaster />
       </body>
     </html>
   );

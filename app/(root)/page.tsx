@@ -1,23 +1,23 @@
+// app/(root)/page.tsx
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from 'next/navigation';
-
 import { Button } from "@/components/ui/button";
 import InterviewCard from "@/components/InterviewCard";
 import LogoutButton from "@/components/LogoutButton";
-
-import { getCurrentUser } from "@/lib/actions/auth.action";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import {
   getInterviewsByUserId,
   getLatestInterviews,
 } from "@/lib/actions/general.action";
 
 async function Home() {
-  const user = await getCurrentUser();
+  // The RootLayout already handles authentication, so we don't need to check again
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (!user || !user.id) {
-    redirect('/sign-in');
-  }
+  const user = session!.user; // We know user exists because RootLayout handles redirect
 
   const [userInterviews, latestInterviews] = await Promise.all([
     getInterviewsByUserId(user.id),
@@ -34,7 +34,7 @@ async function Home() {
         <div className="flex items-center gap-3">
           <div className="relative">
             <Image
-              src="/user-avatar.png"
+              src={user.image || "/user-avatar.png"}
               alt="User Avatar"
               width={48}
               height={48}
@@ -50,6 +50,7 @@ async function Home() {
         <LogoutButton />
       </div>
 
+      {/* Rest of your component remains the same */}
       <section className="card-cta">
         <div className="flex flex-col gap-6 max-w-lg">
           <h2>Get Interview-Ready with AI-Powered Practice & Feedback</h2>

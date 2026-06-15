@@ -1,0 +1,42 @@
+// lib/auth.ts
+import { betterAuth } from "better-auth";
+import { firebaseAdapter } from "@/lib/firebase-adapter";
+
+export const auth = betterAuth({
+  database: firebaseAdapter(),
+  
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: false,
+  },
+  
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    },
+  },
+  
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // 1 day
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
+    },
+  },
+  
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL || "http://localhost:3000"
+  ],
+  
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  secret: process.env.BETTER_AUTH_SECRET!,
+});
+
+export type Session = typeof auth.$Infer.Session;
+export type User = typeof auth.$Infer.Session.user;

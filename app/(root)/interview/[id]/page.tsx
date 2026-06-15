@@ -1,6 +1,6 @@
 import Agent from '@/components/Agent';
 import DisplayTechicons from '@/components/DisplayTechicons';
-import { getCurrentUser } from '@/lib/actions/auth.action';
+import { getCurrentUser } from '@/lib/auth';
 import { getInterviewById, getFeedbackByInterviewId } from '@/lib/actions/general.action';
 import { getRandomInterviewCover } from '@/lib/utils';
 import Image from 'next/image';

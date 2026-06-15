@@ -1,20 +1,26 @@
-import { isAuthenticated } from '@/lib/actions/auth.action'
+// app/(root)/layout.tsx (alternative version using helper)
+import { isAuthenticated } from '@/lib/auth'
 import Image from 'next/image'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import React, { ReactNode } from 'react'
 
-const RootLayout = async({children}:{children :ReactNode}) => {
+const RootLayout = async({ children }: { children: ReactNode }) => {
   const isUserAuthenticated = await isAuthenticated();
-  if(!isUserAuthenticated) redirect('/')
+  
+  if (!isUserAuthenticated) {
+    redirect('/sign-in')
+  }
+  
   return (
     <div className='root-layout'>
       <nav>
-        <Link href = '/' className='flex items-center gap-2'>
-        <Image src = '/logo.svg' alt='logo' width={80} height={80} ></Image>
-        <h2 className='text-primary-100'>SkillHance</h2></Link>
+        <Link href='/' className='flex items-center gap-2'>
+          <Image src='/logo.svg' alt='logo' width={80} height={80} />
+          <h2 className='text-primary-100'>SkillHance</h2>
+        </Link>
       </nav>
-       {children}
+      {children}
     </div>
   )
 }
