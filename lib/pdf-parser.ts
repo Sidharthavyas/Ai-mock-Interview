@@ -1,6 +1,7 @@
-import pdfParse from "pdf-parse";
+import * as pdfParseImport from "pdf-parse";
 
 export async function extractResumeText(fileBuffer: Buffer): Promise<string> {
+  const pdfParse = (pdfParseImport as any).default || pdfParseImport;
   const result = await pdfParse(fileBuffer);
   const cleaned = result.text
     .replace(/\r\n/g, "\n")
