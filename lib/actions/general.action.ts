@@ -24,6 +24,9 @@ export async function createFeedback(params: CreateFeedbackParams) {
       schema: feedbackSchema,
       prompt: `
         You are an AI interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories. Be thorough and detailed in your analysis. Don't be lenient with the candidate. If there are mistakes or areas for improvement, point them out.
+        
+        IMPORTANT: The transcript is generated from real-time speech-to-text. It may contain phonetic or speech-to-text transcription errors (e.g. if the candidate mentions "C++" but the transcript reads "p plus plus" or "c plus plus", or if they mention "C#" but it is transcribed as "c sharp", or "SQL" as "sequel"). Please automatically correct these phonetic/spelling errors in your evaluation before grading the candidate's technical knowledge and communication.
+        
         Transcript:
         ${formattedTranscript}
 
@@ -95,31 +98,44 @@ export async function getLatestInterviews(
 ): Promise<Interview[] | null> {
   const { userId, limit = 20 } = params;
 
-  const interviews = await db
-    .collection("interviews")
-    .orderBy("createdAt", "desc")
-    .where("finalized", "==", true)
-    .where("userId", "!=", userId)
-    .limit(limit)
-    .get();
+  try {
+    const interviewsSnapshot = await db
+      .collection("interviews")
+      .where("finalized", "==", true)
+      .orderBy("createdAt", "desc")
+      .get();
 
-  return interviews.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Interview[];
+    const interviews = interviewsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Interview[];
+
+    // Filter in-memory to bypass Firestore's strict inequality ordering rules
+    return interviews
+      .filter((interview) => interview.userId !== userId)
+      .slice(0, limit);
+  } catch (error) {
+    console.error("Error in getLatestInterviews:", error);
+    return [];
+  }
 }
 
 export async function getInterviewsByUserId(
   userId: string
 ): Promise<Interview[] | null> {
-  const interviews = await db
-    .collection("interviews")
-    .where("userId", "==", userId)
-    .orderBy("createdAt", "desc")
-    .get();
+  try {
+    const interviews = await db
+      .collection("interviews")
+      .where("userId", "==", userId)
+      .orderBy("createdAt", "desc")
+      .get();
 
-  return interviews.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Interview[];
+    return interviews.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Interview[];
+  } catch (error) {
+    console.error("Error in getInterviewsByUserId:", error);
+    return [];
+  }
 }
