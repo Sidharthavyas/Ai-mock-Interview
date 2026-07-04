@@ -151,7 +151,7 @@ const Agent = ({
   };
 
   return (
-    <>
+    <div className="flex flex-col gap-10 w-full mt-4">
       <div className="call-view">
         {/* AI Interviewer Card */}
         <div className="card-interviewer">
@@ -184,7 +184,7 @@ const Agent = ({
       </div>
 
       {messages.length > 0 && (
-        <div className="transcript-border">
+        <div className="transcript-border animate-fadeIn">
           <div className="transcript">
             <p
               key={lastMessage}
@@ -199,7 +199,7 @@ const Agent = ({
         </div>
       )}
 
-      <div className="w-full flex justify-center">
+      <div className="w-full flex justify-center mt-6">
         {callStatus !== "ACTIVE" ? (
           <button className="relative btn-call" onClick={() => handleCall()}>
             <span
@@ -221,7 +221,7 @@ const Agent = ({
           </button>
         )}
       </div>
-    </>
+    </div>
   );
 };
 

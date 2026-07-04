@@ -6,6 +6,7 @@ import { getRandomInterviewCover } from '@/lib/utils';
 import Image from 'next/image';
 import { redirect } from 'next/navigation'
 import React from 'react'
+import { Sparkles } from 'lucide-react';
 
 const Page = async ({ params }: RouteParams) => {
     const { id } = await params;
@@ -27,9 +28,9 @@ const Page = async ({ params }: RouteParams) => {
 
     return (
         <>
-            <div className='flex flex-row gap-4 justify-between'>
-                <div className='flex flex-row gap-4 items-center max-sm:flex-col'>
-                    <div className='flex flex-row gap-4 items-center'>
+            <div className='flex flex-col gap-4 w-full'>
+                <div className='flex flex-row gap-4 items-center justify-between max-sm:flex-col'>
+                    <div className='flex flex-row gap-4 items-center flex-wrap'>
                         <Image 
                             src={getRandomInterviewCover()} 
                             alt="cover-image" 
@@ -39,6 +40,12 @@ const Page = async ({ params }: RouteParams) => {
                         />
                         <h3 className='capitalize'>{interview.role}</h3>
                         <DisplayTechicons techStack={interview.techstack}/>
+                        {interview.resumeUsed && (
+                          <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shrink-0 animate-pulse">
+                            <Sparkles className="size-3" />
+                            Resume Guided
+                          </span>
+                        )}
                     </div>
                     <p className='bg-dark-200 px-4 py-2 rounded-lg h-fit capitalize'>
                         {interview.type}

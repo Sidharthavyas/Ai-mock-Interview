@@ -24,6 +24,7 @@ interface Interview {
   type: string;
   finalized: boolean;
   feedback?: Feedback | null;
+  resumeUsed?: boolean;
 }
 
 interface CreateFeedbackParams {
