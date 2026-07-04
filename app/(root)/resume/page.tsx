@@ -34,7 +34,7 @@ export default async function ResumePage() {
       <div className="flex flex-col gap-1">
         <h2 className="text-3xl font-bold tracking-tight text-white">Resume Analyzer & Prep</h2>
         <p className="text-sm text-light-100">
-          Upload your PDF resume and analyze it against any Job Description (JD) using Gemini 3.5 Flash.
+          Upload your PDF resume and analyze it against any Job Description (JD) using AI.
         </p>
       </div>
 

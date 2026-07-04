@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { extractResumeText, saveResumeToProfile } from "@/lib/actions/resume.action";
+import { saveResumeToProfile } from "@/lib/actions/resume.action";
+import { extractResumeText } from "@/lib/pdf-parser";
 
 export const runtime = "nodejs";
 

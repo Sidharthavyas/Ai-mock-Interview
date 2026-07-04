@@ -44,41 +44,8 @@ const MODEL = google("gemini-3.5-flash", {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-// 1. RESUME TEXT EXTRACTION
+// 1. RESUME TEXT EXTRACTION (Moved to server-only helper lib/pdf-parser.ts to prevent browser crashes)
 // ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Extracts plain text from an uploaded PDF resume.
- *
- * Call this in your upload API route (Node runtime, NOT edge — pdf-parse
- * needs Node's fs/buffer APIs). Example route: app/api/resume/upload/route.ts
- *
- *   export const runtime = "nodejs";
- *   const bytes = await file.arrayBuffer();
- *   const text = await extractResumeText(Buffer.from(bytes));
- */
-export async function extractResumeText(fileBuffer: Buffer): Promise<string> {
-  // Lazy import: pdf-parse has side effects on import (reads a test file
-  // when required at the top level in some bundling setups), so importing
-  // it inside the function avoids build-time issues in Next.js.
-  const pdfParseImport = (await import("pdf-parse")) as any;
-  const pdfParse = pdfParseImport.default || pdfParseImport;
-
-  const result = await pdfParse(fileBuffer);
-  const cleaned = result.text
-    .replace(/\r\n/g, "\n")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-
-  if (cleaned.length < 50) {
-    throw new Error(
-      "Could not extract meaningful text from this PDF. It may be a scanned image rather than a text-based PDF."
-    );
-  }
-
-  return cleaned;
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // 2. RESUME-BASED INTERVIEW QUESTION GENERATION

@@ -272,12 +272,10 @@ export default function ResumeAnalyzerClient({ initialResume, userId }: ResumeAn
                 <span className="absolute animate-ping rounded-full bg-primary-200/20 size-16" />
                 <Loader2 className="size-8 text-primary-200 animate-spin" />
               </div>
-              <div>
-                <h4 className="text-lg font-semibold text-white">Analyzing Match with Gemini</h4>
+                <h4 className="text-lg font-semibold text-white">Analyzing Match with AI</h4>
                 <p className="text-sm text-light-400 max-w-sm mt-2">
-                  Gemini is matching your resume achievements, tools, and experience levels against the JD requirements...
+                  AI is matching your resume achievements, tools, and experience levels against the JD requirements...
                 </p>
-              </div>
             </div>
           </div>
         )}
