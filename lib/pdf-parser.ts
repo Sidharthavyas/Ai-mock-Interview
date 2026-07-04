@@ -1,9 +1,11 @@
-import * as pdfParseImport from "pdf-parse";
+import { extractText, getDocumentProxy } from "unpdf";
 
 export async function extractResumeText(fileBuffer: Buffer): Promise<string> {
-  const pdfParse = (pdfParseImport as any).default || pdfParseImport;
-  const result = await pdfParse(fileBuffer);
-  const cleaned = result.text
+  // unpdf parses the PDF entirely in JS/TS with zero native dependencies
+  const pdf = await getDocumentProxy(new Uint8Array(fileBuffer));
+  const { text } = await extractText(pdf, { mergePages: true });
+
+  const cleaned = text
     .replace(/\r\n/g, "\n")
     .replace(/[ \t]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")
