@@ -107,11 +107,9 @@ export const interviewer: CreateAssistantDTO = {
     language: "en",
   },
   voice: {
-    provider: "elevenlabs",
-    voiceId: "sarah",
-    stability: 0.4,
-    similarityBoost: 0.8,
-    speed: 0.9,
+    provider: "cartesia",
+    voiceId: "248be419-f293-4fce-bc9c-3c59187dda40",
+    model: "sonic-english",
   },
   model: {
     provider: "openai",
