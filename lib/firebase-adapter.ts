@@ -212,7 +212,7 @@ export function firebaseAdapter() {
             const batch = db.batch();
             
             chunk.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
-              batch.update(doc.ref, updateData);
+              batch.update(doc.ref, updateData as any);
             });
 
             await batch.commit();
@@ -408,7 +408,7 @@ export function firebaseAdapter() {
                 updatedAt: new Date().toISOString(),
               });
               
-              transaction.update(doc.ref, updateData);
+              transaction.update(doc.ref, updateData as any);
               
               return { 
                 id: doc.id, 
@@ -438,7 +438,7 @@ export function firebaseAdapter() {
               });
 
               snapshot.docs.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
-                transaction.update(doc.ref, updateData);
+                transaction.update(doc.ref, updateData as any);
               });
               
               return snapshot.docs.length;

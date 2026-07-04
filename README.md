@@ -7,6 +7,8 @@ An advanced, real-time AI-powered voice mock interview platform designed to help
 ## 🚀 Key Features
 
 - **Customizable Interview Configurator**: Choose target role (e.g., Frontend Developer, Full Stack Developer), experience level (Junior, Mid, Senior), technologies (React, Node, etc.), behavioral/technical balance, and number of questions.
+- **Resume-Based Mock Interviews**: Ground your mock interviews in your actual resume! The platform parses your uploaded resume, and the AI voice assistant will ask personalized questions about your past projects, roles, and technical achievements.
+- **Resume vs JD Match Analyzer**: Paste a Job Description (JD) and upload your resume to get an instant compatibility analysis. Gemini AI rates your fit (0-100), gives a verdict, flags key skill gaps, identifies transferable experience, and lists actionable ATS-optimization tips.
 - **Real-Time Voice Assistant (Vapi)**: Conducts live voice interviews using Vapi SDK, featuring:
   - **Deepgram** for high-accuracy speech-to-text transcription.
   - **ElevenLabs** for human-like, low-latency text-to-speech voice synthesis.
@@ -42,11 +44,16 @@ ai_interview_platform/
 │   │   │       ├── page.tsx     # Voice Agent container
 │   │   │       └── feedback/
 │   │   │           └── page.tsx # Report card / feedback view
+│   │   ├── resume/              # Resume upload & JD analyzer page
+│   │   │   └── page.tsx
 │   │   └── page.tsx             # Dashboard / User Home page
 │   ├── api/
 │   │   ├── auth/                # Better Auth API endpoints
+│   │   ├── resume/
+│   │   │   └── upload/          # Extracts PDF text and saves to profile
+│   │   │       └── route.ts
 │   │   └── vapi/
-│   │       └── generate/        # AI Interview Questions generator
+│   │       └── generate/        # AI Interview Questions generator (updated for resumes)
 │   ├── constants/
 │   │   └── index.ts             # Prompts, schemas, interview constants
 │   ├── types/
@@ -57,12 +64,14 @@ ai_interview_platform/
 │   ├── Agent.tsx                # Voice Agent core UI and call handlers
 │   ├── DisplayTechicons.tsx     # Tech stack icon renderer
 │   ├── InterviewCard.tsx        # Dashboard Interview & Feedback card
-│   └── LogoutButton.tsx         # Auth logout action trigger
+│   ├── LogoutButton.tsx         # Auth logout action trigger
+│   └── ResumeAnalyzerClient.tsx # Interactive resume upload & JD analyzer UI
 ├── firebase/
 │   └── admin.ts                 # Firebase Admin initialization
 ├── lib/
 │   ├── actions/
-│   │   └── general.action.ts    # Server actions (createFeedback, getFeedbackByInterviewId, getInterviewById)
+│   │   ├── general.action.ts    # Server actions (createFeedback, getFeedbackByInterviewId, getInterviewById)
+│   │   └── resume.action.ts     # Server actions (analyzeUserResumeAgainstJD, deleteResumeFromProfile, getResumeMetadataFromProfile)
 │   ├── auth.ts                  # Better Auth configuration
 │   ├── utils.ts                 # Styling & utility helpers
 │   └── vapi.sdk.ts              # Vapi SDK instance wrapper
@@ -123,6 +132,7 @@ interface Interview {
   type: "Technical" | "Behavioral" | "Mixed";
   finalized: boolean;
   createdAt: string;
+  resumeUsed?: boolean;
 }
 ```
 
@@ -143,7 +153,40 @@ interface Feedback {
   ];
   strengths: string[];
   areasForImprovement: string[];
-  finalAssessment: string; // Evaluation paragraph detailing where to improve, what went wrong, and what went right
+  finalAssessment: string;
+  createdAt: string;
+}
+```
+
+### 3. `users` Collection (Resume extension)
+Stores parsed resume details under the user profile.
+```typescript
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  resume?: {
+    text: string;
+    filename: string;
+    uploadedAt: string;
+  };
+}
+```
+
+### 4. `resumeAnalyses` Collection
+Stores detailed job description compatibility analysis reports.
+```typescript
+interface ResumeAnalysis {
+  id: string;
+  userId: string;
+  matchScore: number;
+  verdict: "Strong Match" | "Good Match" | "Partial Match" | "Weak Match";
+  matchedSkills: string[];
+  missingSkills: string[];
+  transferableExperience: string[];
+  atsNotes: string[];
+  summary: string;
+  jobDescription: string;
   createdAt: string;
 }
 ```
@@ -153,16 +196,24 @@ interface Feedback {
 ## 🤖 AI Logic & API Endpoints
 
 ### 1. Interview Questions Generation API
-- **Endpoint**: `POST /api/auth/vapi/generate`
-- **Role**: Invoked when configuring a new mock interview. It uses `generateText` with `gemini-3.5-flash` to structure a set of voice-agent friendly questions matching the role, experience level, and tech stack of the candidate.
+- **Endpoint**: `POST /api/vapi/generate`
+- **Role**: Invoked when configuring a new mock interview. If the user has uploaded a resume, it extracts the resume plain text and calls `generateResumeBasedQuestions` with **`gemini-3.5-flash`** to structure personalized, resume-grounded questions. Otherwise, it falls back to generating generic questions matching the selected role, level, and tech stack.
 - **Format**: Returns JSON-parsed array of strings: `["Question 1", "Question 2", ...]`.
 
-### 2. Feedback Synthesizer Server Action
+### 2. Resume Text Extraction & Upload API
+- **Endpoint**: `POST /api/resume/upload`
+- **Role**: Extracts plain text from an uploaded PDF resume on the server using `pdf-parse`, and updates the user's Firestore document.
+
+### 3. Feedback Synthesizer Server Action
 - **Action**: `createFeedback` in `lib/actions/general.action.ts`
 - **Role**: Triggered once the user disconnects the call. It captures the interview transcript from Vapi events, formats the transcript, and invokes Vercel AI SDK `generateObject` with **`gemini-3.5-flash`** enforcing the Zod schema (`feedbackSchema`).
 - **Grading Schema**:
   - Validates exact categories: *Communication Skills*, *Technical Knowledge*, *Problem Solving*, *Cultural Fit*, *Confidence and Clarity*.
   - Compiles specific strengths, improvement directives, and a summary paragraph of performance.
+
+### 4. Resume & JD Match Analyzer Server Action
+- **Action**: `analyzeUserResumeAgainstJD` in `lib/actions/resume.action.ts`
+- **Role**: Compares user's resume text from Firestore against a pasted Job Description using Gemini and returns compatibility metrics (matchScore, verdict, matchedSkills, missingSkills, transferableExperience, atsNotes, summary). Saves the output to the `resumeAnalyses` Firestore collection.
 
 ---
 
