@@ -284,6 +284,10 @@ export async function saveResumeToProfile(
   resumeText: string,
   filename: string
 ): Promise<void> {
+  if (!userId || typeof userId !== "string") {
+    console.error("saveResumeToProfile: Invalid or empty userId:", userId);
+    return;
+  }
   await db.collection("users").doc(userId).set(
     {
       resume: {
@@ -297,6 +301,10 @@ export async function saveResumeToProfile(
 }
 
 export async function getResumeFromProfile(userId: string): Promise<string | null> {
+  if (!userId || typeof userId !== "string") {
+    console.warn("getResumeFromProfile: Invalid or empty userId:", userId);
+    return null;
+  }
   const doc = await db.collection("users").doc(userId).get();
   const data = doc.data();
   return data?.resume?.text ?? null;
@@ -305,6 +313,10 @@ export async function getResumeFromProfile(userId: string): Promise<string | nul
 export async function getResumeMetadataFromProfile(
   userId: string
 ): Promise<{ filename: string; uploadedAt: string } | null> {
+  if (!userId || typeof userId !== "string") {
+    console.warn("getResumeMetadataFromProfile: Invalid or empty userId:", userId);
+    return null;
+  }
   const doc = await db.collection("users").doc(userId).get();
   const data = doc.data();
   if (data?.resume?.filename && data?.resume?.uploadedAt) {
@@ -317,6 +329,10 @@ export async function getResumeMetadataFromProfile(
 }
 
 export async function deleteResumeFromProfile(userId: string): Promise<void> {
+  if (!userId || typeof userId !== "string") {
+    console.error("deleteResumeFromProfile: Invalid or empty userId:", userId);
+    return;
+  }
   const { FieldValue } = await import("firebase-admin/firestore");
   await db.collection("users").doc(userId).update({
     resume: FieldValue.delete(),

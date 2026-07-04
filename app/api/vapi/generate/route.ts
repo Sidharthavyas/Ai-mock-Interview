@@ -7,22 +7,70 @@ import { getResumeFromProfile, generateResumeBasedQuestions } from "@/lib/action
 
 export async function POST(request: Request) {
   try {
-    const { type, role, level, techstack, amount, userid, useResume } = await request.json();
-    
+    const body = await request.json();
+    console.log("POST /api/vapi/generate body:", JSON.stringify(body));
+
+    let type = body.type;
+    let role = body.role;
+    let level = body.level;
+    let techstack = body.techstack;
+    let amount = body.amount;
+    let userid = body.userid;
+    let useResume = body.useResume;
+    let toolCallId: string | undefined = undefined;
+
+    // 1. Check if it is a Vapi tool call event
+    if (body.message?.toolCalls?.[0]) {
+      const toolCall = body.message.toolCalls[0];
+      toolCallId = toolCall.id;
+      const args = toolCall.function?.arguments;
+      if (args) {
+        const parsedArgs = typeof args === "string" ? JSON.parse(args) : args;
+        if (parsedArgs.type !== undefined) type = parsedArgs.type;
+        if (parsedArgs.role !== undefined) role = parsedArgs.role;
+        if (parsedArgs.level !== undefined) level = parsedArgs.level;
+        if (parsedArgs.techstack !== undefined) techstack = parsedArgs.techstack;
+        if (parsedArgs.amount !== undefined) amount = parsedArgs.amount;
+        if (parsedArgs.userid !== undefined) userid = parsedArgs.userid;
+        if (parsedArgs.useResume !== undefined) useResume = parsedArgs.useResume;
+      }
+    }
+
+    // 2. Check for userid/userId in variable values if not already resolved
+    if (!userid) {
+      const call = body.message?.call;
+      const vars = call?.variableValues || call?.assistantOverrides?.variableValues;
+      if (vars) {
+        userid = vars.userid || vars.userId;
+      }
+    }
+
+    console.log("Extracted params:", { type, role, level, techstack, amount, userid, useResume, toolCallId });
+
+    // Fallbacks
+    const finalRole = role || "Software Engineer";
+    const finalLevel = level || "Mid";
+    const finalType = type || "mixed";
+    const finalAmount = Number(amount) || 5;
+    const finalUserId = userid || "";
+
     let questionsList: string[] = [];
     let resumeUsed = false;
 
     // Check if we should use a resume
-    if (useResume !== false) {
-      const resumeText = await getResumeFromProfile(userid);
+    if (useResume !== false && finalUserId) {
+      const resumeText = await getResumeFromProfile(finalUserId);
       if (resumeText) {
+        const parsedTechstack = techstack 
+          ? (typeof techstack === "string" ? techstack.split(",").map((s: string) => s.trim()) : techstack)
+          : [];
         const result = await generateResumeBasedQuestions({
           resumeText,
-          role,
-          level,
-          techstack: techstack ? techstack.split(",").map((s: string) => s.trim()) : [],
-          type,
-          amount: Number(amount) || 5,
+          role: finalRole,
+          level: finalLevel,
+          techstack: parsedTechstack,
+          type: finalType,
+          amount: finalAmount,
         });
 
         if (result.success && result.questions && result.questions.length > 0) {
@@ -35,14 +83,18 @@ export async function POST(request: Request) {
     }
 
     if (!resumeUsed) {
+      const techstackString = Array.isArray(techstack) 
+        ? techstack.join(", ") 
+        : (techstack ? String(techstack) : "");
+
       const { text: questions } = await generateText({
         model: google("gemini-3.5-flash"),
         prompt: `Prepare questions for a job interview.
-          The job role is ${role}.
-          The job experience level is ${level}.
-          The tech stack used in the job is: ${techstack}.
-          The focus between behavioural and technical questions should lean towards: ${type}.
-          The amount of questions required is: ${amount}.
+          The job role is ${finalRole}.
+          The job experience level is ${finalLevel}.
+          The tech stack used in the job is: ${techstackString}.
+          The focus between behavioural and technical questions should lean towards: ${finalType}.
+          The amount of questions required is: ${finalAmount}.
           Please return only the questions, without any additional text.
           The questions are going to be read by a voice assistant so do not use "/" or "*" or any other special characters which might break the voice assistant.
           Return the questions formatted like this:
@@ -51,23 +103,49 @@ export async function POST(request: Request) {
           Thank you! <3
       `,
       });
-      questionsList = JSON.parse(questions);
+
+      let cleanQuestions = questions.trim();
+      if (cleanQuestions.startsWith("```json")) {
+        cleanQuestions = cleanQuestions.substring(7);
+      } else if (cleanQuestions.startsWith("```")) {
+        cleanQuestions = cleanQuestions.substring(3);
+      }
+      if (cleanQuestions.endsWith("```")) {
+        cleanQuestions = cleanQuestions.substring(0, cleanQuestions.length - 3);
+      }
+      questionsList = JSON.parse(cleanQuestions.trim());
     }
 
+    const finalTechstack = techstack 
+      ? (typeof techstack === "string" ? techstack.split(",").map((s: string) => s.trim()) : techstack)
+      : [];
+
     const interview = {
-      role: role,
-      type: type,
-      level: level,
-      techstack: techstack ? techstack.split(",") : [],
+      role: finalRole,
+      type: finalType,
+      level: finalLevel,
+      techstack: finalTechstack,
       questions: questionsList,
-      userId: userid,
+      userId: finalUserId,
       finalized: true,
       coverImage: getRandomInterviewCover(),
       createdAt: new Date().toISOString(),
       resumeUsed,
     };
 
-    await db.collection("interviews").add(interview);
+    const docRef = await db.collection("interviews").add(interview);
+    console.log("Successfully created interview in Firestore:", docRef.id);
+
+    if (toolCallId) {
+      return Response.json({
+        results: [
+          {
+            toolCallId,
+            result: { success: true }
+          }
+        ]
+      }, { status: 200 });
+    }
 
     return Response.json({ success: true }, { status: 200 });
   } catch (error) {

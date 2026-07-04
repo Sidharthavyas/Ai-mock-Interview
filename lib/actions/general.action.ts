@@ -70,6 +70,10 @@ export async function createFeedback(params: CreateFeedbackParams) {
 }
 
 export async function getInterviewById(id: string): Promise<Interview | null> {
+  if (!id || typeof id !== "string") {
+    console.warn("getInterviewById: Invalid or empty id:", id);
+    return null;
+  }
   const interview = await db.collection("interviews").doc(id).get();
 
   return interview.data() as Interview | null;
