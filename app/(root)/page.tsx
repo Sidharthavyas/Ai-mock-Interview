@@ -7,6 +7,7 @@ import LogoutButton from "@/components/LogoutButton";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import {
+  getFeedbackByInterviewId,
   getInterviewsByUserId,
   getLatestInterviews,
 } from "@/lib/actions/general.action";
@@ -30,9 +31,30 @@ async function Home() {
 
   const user = session.user;
 
-  const [userInterviews, latestInterviews] = await Promise.all([
+  const [rawUserInterviews, rawLatestInterviews] = await Promise.all([
     getInterviewsByUserId(user.id),
     getLatestInterviews({ userId: user.id }),
+  ]);
+
+  const [userInterviews, latestInterviews] = await Promise.all([
+    Promise.all(
+      (rawUserInterviews || []).map(async (interview) => {
+        const feedback = await getFeedbackByInterviewId({
+          interviewId: interview.id,
+          userId: user.id,
+        });
+        return { ...interview, feedback };
+      })
+    ),
+    Promise.all(
+      (rawLatestInterviews || []).map(async (interview) => {
+        const feedback = await getFeedbackByInterviewId({
+          interviewId: interview.id,
+          userId: user.id,
+        });
+        return { ...interview, feedback };
+      })
+    ),
   ]);
 
   const hasPastInterviews = userInterviews && userInterviews.length > 0;
@@ -97,6 +119,7 @@ async function Home() {
                 type={interview.type}
                 techstack={interview.techstack}
                 createdAt={interview.createdAt}
+                feedback={interview.feedback}
               />
             ))
           ) : (
@@ -119,6 +142,7 @@ async function Home() {
                 type={interview.type}
                 techstack={interview.techstack}
                 createdAt={interview.createdAt}
+                feedback={interview.feedback}
               />
             ))
           ) : (

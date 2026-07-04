@@ -5,9 +5,8 @@ import { getRandomInterviewCover } from '@/lib/utils';
 import { Button } from './ui/button';
 import Link from 'next/link';
 import DisplayTechicons from './DisplayTechicons';
-const InterviewCard = ({id,userId,role,type,techstack,createdAt}:InterviewCardProps) => {
-  const feedback = null as Feedback | null
-  const normalizedType = /mix/gi.test(type) ? 'Mixed' : type;
+const InterviewCard = ({id,userId,role,type,techstack,createdAt,feedback}:InterviewCardProps) => {
+   const normalizedType = /mix/gi.test(type) ? 'Mixed' : type;
    const formatedDate = dayjs(feedback?.createdAt || createdAt || Date.now()).format('MMM D, YYYY')
   return (
     <div className='card-border w-[360px] max-sm:w-full min-h-96'>
