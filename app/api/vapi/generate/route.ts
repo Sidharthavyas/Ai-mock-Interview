@@ -20,8 +20,12 @@ export async function POST(request: Request) {
     let toolCallId: string | undefined = undefined;
 
     // 1. Check if it is a Vapi tool call event
-    if (body.message?.toolCalls?.[0]) {
-      const toolCall = body.message.toolCalls[0];
+    const toolCall = body.message?.toolCalls?.[0] || 
+                     body.message?.toolCallList?.[0] || 
+                     body.toolCalls?.[0] || 
+                     body.toolCallList?.[0];
+
+    if (toolCall) {
       toolCallId = toolCall.id;
       const args = toolCall.function?.arguments;
       if (args) {
@@ -32,13 +36,14 @@ export async function POST(request: Request) {
         if (parsedArgs.techstack !== undefined) techstack = parsedArgs.techstack;
         if (parsedArgs.amount !== undefined) amount = parsedArgs.amount;
         if (parsedArgs.userid !== undefined) userid = parsedArgs.userid;
+        if (parsedArgs.userId !== undefined) userid = parsedArgs.userId;
         if (parsedArgs.useResume !== undefined) useResume = parsedArgs.useResume;
       }
     }
 
     // 2. Check for userid/userId in variable values if not already resolved
     if (!userid) {
-      const call = body.message?.call;
+      const call = body.message?.call || body.call;
       const vars = call?.variableValues || call?.assistantOverrides?.variableValues;
       if (vars) {
         userid = vars.userid || vars.userId;
