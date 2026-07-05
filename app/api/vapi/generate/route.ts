@@ -10,6 +10,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log("POST /api/vapi/generate body:", JSON.stringify(body));
 
+    // If it's a Vapi webhook request, only proceed for tool calls.
+    // Skip status updates, end-of-call reports, etc. to prevent saving duplicate/dummy interviews.
+    if (body.message && body.message.type !== "tool-calls") {
+      console.log(`Skipping Vapi webhook message of type: ${body.message.type}`);
+      return Response.json({ success: true }, { status: 200 });
+    }
+
     let type = body.type;
     let role = body.role;
     let level = body.level;
@@ -27,17 +34,25 @@ export async function POST(request: Request) {
 
     if (toolCall) {
       toolCallId = toolCall.id;
-      const args = toolCall.function?.arguments;
+      // Vapi passes arguments under function.parameters instead of function.arguments in some payloads.
+      // We check all possible paths to be extremely robust.
+      const args = toolCall.function?.arguments || 
+                   toolCall.function?.parameters || 
+                   toolCall.arguments || 
+                   toolCall.parameters;
+
       if (args) {
         const parsedArgs = typeof args === "string" ? JSON.parse(args) : args;
         if (parsedArgs.type !== undefined) type = parsedArgs.type;
         if (parsedArgs.role !== undefined) role = parsedArgs.role;
         if (parsedArgs.level !== undefined) level = parsedArgs.level;
         if (parsedArgs.techstack !== undefined) techstack = parsedArgs.techstack;
+        if (parsedArgs.techStack !== undefined) techstack = parsedArgs.techStack;
         if (parsedArgs.amount !== undefined) amount = parsedArgs.amount;
         if (parsedArgs.userid !== undefined) userid = parsedArgs.userid;
         if (parsedArgs.userId !== undefined) userid = parsedArgs.userId;
         if (parsedArgs.useResume !== undefined) useResume = parsedArgs.useResume;
+        if (parsedArgs.useresume !== undefined) useResume = parsedArgs.useresume;
       }
     }
 
