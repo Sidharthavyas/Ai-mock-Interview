@@ -9,6 +9,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log("POST /api/vapi/generate body:", JSON.stringify(body));
+    console.log("FULL RAW BODY:", JSON.stringify(body, null, 2));
 
     // If it's a Vapi webhook request, only proceed for tool calls.
     // Skip status updates, end-of-call reports, etc. to prevent saving duplicate/dummy interviews.
@@ -26,7 +27,14 @@ export async function POST(request: Request) {
     let useResume = body.useResume;
     let toolCallId: string | undefined = undefined;
 
-    // 1. Check if it is a Vapi tool call event
+    // 1. Resolve userid FIRST from server-injected Vapi variables (most reliable)
+    const callObj = body.message?.call || body.call;
+    const vars = callObj?.variableValues || callObj?.assistantOverrides?.variableValues;
+    if (vars) {
+      userid = vars.userid || vars.userId;
+    }
+
+    // 2. Check if it is a Vapi tool call event
     const toolCall = body.message?.toolCalls?.[0] || 
                      body.message?.toolCallList?.[0] || 
                      body.toolCalls?.[0] || 
@@ -49,19 +57,14 @@ export async function POST(request: Request) {
         if (parsedArgs.techstack !== undefined) techstack = parsedArgs.techstack;
         if (parsedArgs.techStack !== undefined) techstack = parsedArgs.techStack;
         if (parsedArgs.amount !== undefined) amount = parsedArgs.amount;
-        if (parsedArgs.userid !== undefined) userid = parsedArgs.userid;
-        if (parsedArgs.userId !== undefined) userid = parsedArgs.userId;
         if (parsedArgs.useResume !== undefined) useResume = parsedArgs.useResume;
         if (parsedArgs.useresume !== undefined) useResume = parsedArgs.useresume;
-      }
-    }
 
-    // 2. Check for userid/userId in variable values if not already resolved
-    if (!userid) {
-      const call = body.message?.call || body.call;
-      const vars = call?.variableValues || call?.assistantOverrides?.variableValues;
-      if (vars) {
-        userid = vars.userid || vars.userId;
+        // Only override userid if not already resolved from server variables
+        if (!userid) {
+          if (parsedArgs.userid !== undefined) userid = parsedArgs.userid;
+          if (parsedArgs.userId !== undefined) userid = parsedArgs.userId;
+        }
       }
     }
 
@@ -73,6 +76,12 @@ export async function POST(request: Request) {
     const finalType = type || "mixed";
     const finalAmount = Number(amount) || 5;
     const finalUserId = userid || "";
+
+    // Fail-closed safety check to prevent orphaned documents without a user ID
+    if (!finalUserId) {
+      console.error("generate route: no userid resolved", { body });
+      return Response.json({ success: false, error: "Missing userid" }, { status: 400 });
+    }
 
     let questionsList: string[] = [];
     let resumeUsed = false;
