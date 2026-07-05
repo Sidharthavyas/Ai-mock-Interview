@@ -47,14 +47,23 @@ const InterviewCard = async ({id,userId,role,type,techstack,createdAt,feedback}:
              <div className="flex-1 min-w-[120px]"> 
                <DisplayTechicons techStack={techstack}/>  
              </div>
-             <Button asChild className="max-sm:w-full shrink-0">
-               <Link href={feedback 
-                 ? `/interview/${id}/feedback`
-                 : `/interview/${id}`
-               }>
-                 {feedback?'Check Feedback':'View Interview'}
-               </Link>
-             </Button>
+             <div className="flex flex-row gap-2 max-sm:w-full justify-end">
+               {feedback && (
+                 <Button asChild variant="outline" className="max-sm:flex-1 bg-dark-200 border-gray-700 text-white hover:bg-dark-300">
+                   <Link href={`/interview/${id}`}>
+                     Retake
+                   </Link>
+                 </Button>
+               )}
+               <Button asChild className="max-sm:flex-1 shrink-0">
+                 <Link href={feedback 
+                   ? `/interview/${id}/feedback`
+                   : `/interview/${id}`
+                 }>
+                   {feedback?'Feedback':'View Interview'}
+                 </Link>
+               </Button>
+             </div>
            </div>
          </div>
        </div>
