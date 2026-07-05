@@ -5,6 +5,32 @@ import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
 import { getResumeFromProfile, generateResumeBasedQuestions } from "@/lib/actions/resume.action";
 
+// Helper to recursively find a key in an object (case-insensitive)
+function findKey(obj: any, targetKey: string): any {
+  if (!obj || typeof obj !== "object") return undefined;
+  
+  const targetLower = targetKey.toLowerCase();
+  
+  // 1. Direct match (case-insensitive)
+  for (const key of Object.keys(obj)) {
+    if (key.toLowerCase() === targetLower) {
+      return obj[key];
+    }
+  }
+  
+  // 2. Recursive traversal
+  for (const key of Object.keys(obj)) {
+    if (typeof obj[key] === "object" && obj[key] !== null) {
+      const result = findKey(obj[key], targetKey);
+      if (result !== undefined) {
+        return result;
+      }
+    }
+  }
+  
+  return undefined;
+}
+
 export async function POST(request: Request) {
   try {
     const rawText = await request.text();
@@ -41,72 +67,53 @@ export async function POST(request: Request) {
     }
 
     // === PRIMARY SOURCE: Query params (Vapi URL template variables) ===
-    // Since Vapi's apiRequest sends body:{}, we read params from the URL
-    // Tool URL should be: /api/vapi/generate?userid={{userid}}&role={{role}}&...
-    let type: any = qp.type || body.type;
-    let role: any = qp.role || body.role;
-    let level: any = qp.level || body.level;
-    let techstack: any = qp.techstack || body.techstack;
-    let amount: any = qp.amount || body.amount;
-    let userid: any = qp.userid || body.userid;
-    let useResume: any = qp.useResume !== undefined ? qp.useResume !== "false" : body.useResume;
     let toolCallId: string | undefined = undefined;
 
-
-    // 1. Resolve userid from ALL possible Vapi body locations
-    const callObj = body.message?.call || body.call;
-
-    // Path A: assistantOverrides.variableValues (web SDK path)
-    const vars = callObj?.assistantOverrides?.variableValues
-      || callObj?.variableValues
-      || body.message?.assistantOverrides?.variableValues;
-    if (vars?.userid) userid = vars.userid;
-    if (vars?.userId) userid = vars.userId;
-
-    // Path B: call.metadata
-    const meta = callObj?.metadata || body.message?.metadata;
-    if (meta?.userid) userid = meta.userid;
-    if (meta?.userId) userid = meta.userId;
-
-    // Path C: customer object
-    const customer = callObj?.customer || body.message?.customer;
-    if (customer?.userId) userid = customer.userId;
-
-    console.log("userid after all fallbacks:", userid, "| callObj keys:", callObj ? Object.keys(callObj) : "none");
-
-    // 2. Check if it is a Vapi tool call event
+    // Try to locate tool call info
     const toolCall = body.message?.toolCalls?.[0] || 
                      body.message?.toolCallList?.[0] || 
                      body.toolCalls?.[0] || 
                      body.toolCallList?.[0];
 
+    let args: any = {};
     if (toolCall) {
       toolCallId = toolCall.id;
-      // Vapi passes arguments under function.parameters instead of function.arguments in some payloads.
-      // We check all possible paths to be extremely robust.
-      const args = toolCall.function?.arguments || 
-                   toolCall.function?.parameters || 
-                   toolCall.arguments || 
-                   toolCall.parameters;
-
-      if (args) {
-        const parsedArgs = typeof args === "string" ? JSON.parse(args) : args;
-        if (parsedArgs.type !== undefined) type = parsedArgs.type;
-        if (parsedArgs.role !== undefined) role = parsedArgs.role;
-        if (parsedArgs.level !== undefined) level = parsedArgs.level;
-        if (parsedArgs.techstack !== undefined) techstack = parsedArgs.techstack;
-        if (parsedArgs.techStack !== undefined) techstack = parsedArgs.techStack;
-        if (parsedArgs.amount !== undefined) amount = parsedArgs.amount;
-        if (parsedArgs.useResume !== undefined) useResume = parsedArgs.useResume;
-        if (parsedArgs.useresume !== undefined) useResume = parsedArgs.useresume;
-
-        // Only override userid if not already resolved from server variables
-        if (!userid) {
-          if (parsedArgs.userid !== undefined) userid = parsedArgs.userid;
-          if (parsedArgs.userId !== undefined) userid = parsedArgs.userId;
-        }
+      const rawArgs = toolCall.function?.arguments || 
+                      toolCall.function?.parameters || 
+                      toolCall.arguments || 
+                      toolCall.parameters;
+      if (rawArgs) {
+        args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
       }
     }
+
+    // Resolves key from query parameters, then tool call arguments, then the rest of body recursively
+    const getParam = (keyName: string) => {
+      // 1. Query parameters
+      if (qp[keyName] !== undefined) return qp[keyName];
+      const keyNameLower = keyName.toLowerCase();
+      if (qp[keyNameLower] !== undefined) return qp[keyNameLower];
+      
+      // 2. Tool call arguments
+      const argVal = findKey(args, keyName);
+      if (argVal !== undefined) return argVal;
+      
+      // 3. Recursive body check
+      const bodyVal = findKey(body, keyName);
+      if (bodyVal !== undefined) return bodyVal;
+      
+      return undefined;
+    };
+
+    let type: any = getParam("type");
+    let role: any = getParam("role");
+    let level: any = getParam("level");
+    let techstack: any = getParam("techstack") || getParam("techStack");
+    let amount: any = getParam("amount");
+    let userid: any = getParam("userid") || getParam("userId");
+    let useResume: any = getParam("useResume") !== undefined 
+      ? getParam("useResume") !== "false" 
+      : getParam("useresume");
 
     console.log("Extracted params:", { type, role, level, techstack, amount, userid, useResume, toolCallId });
 
