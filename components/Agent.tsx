@@ -119,12 +119,16 @@ const Agent = ({
 
     try {
       if (type === "generate") {
-        await vapi.start(process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID!, {
-          variableValues: {
-            username: userName,
-            userid: userId,
-          },
-        });
+        console.log("starting vapi with", { userName, userId, assistantId: process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID });
+        await vapi.start(
+          process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID!,
+          {
+            variableValues: {
+              username: userName,
+              userid: userId,
+            },
+          }
+        );
       } else {
         let formattedQuestions = "";
         if (questions) {
@@ -133,11 +137,14 @@ const Agent = ({
             .join("\n");
         }
 
-        await vapi.start(interviewer, {
-          variableValues: {
-            questions: formattedQuestions,
-          },
-        });
+        await vapi.start(
+          interviewer,
+          {
+            variableValues: {
+              questions: formattedQuestions,
+            },
+          }
+        );
       }
     } catch (error) {
       console.error("Failed to start VAPI call:", error);

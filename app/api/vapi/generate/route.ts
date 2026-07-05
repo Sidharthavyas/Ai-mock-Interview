@@ -7,7 +7,29 @@ import { getResumeFromProfile, generateResumeBasedQuestions } from "@/lib/action
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const rawText = await request.text();
+    const contentType = request.headers.get("content-type");
+
+    // Log ALL headers so we can see what Vapi sends
+    const allHeaders: Record<string, string> = {};
+    request.headers.forEach((value, key) => { allHeaders[key] = value; });
+    console.log("=== VAPI RAW REQUEST ===");
+    console.log("Content-Type:", contentType);
+    console.log("All headers:", JSON.stringify(allHeaders, null, 2));
+    console.log("Raw body text:", rawText);
+
+    // Also read query params — Vapi supports {{variable}} in URL field
+    const url = new URL(request.url);
+    const qp = Object.fromEntries(url.searchParams.entries());
+    console.log("Query params:", JSON.stringify(qp));
+
+    let body: any = {};
+    try {
+      body = rawText ? JSON.parse(rawText) : {};
+    } catch (e) {
+      console.error("JSON parse failed:", e);
+      body = {};
+    }
     console.log("POST /api/vapi/generate body:", JSON.stringify(body));
     console.log("FULL RAW BODY:", JSON.stringify(body, null, 2));
 
@@ -18,21 +40,39 @@ export async function POST(request: Request) {
       return Response.json({ success: true }, { status: 200 });
     }
 
-    let type = body.type;
-    let role = body.role;
-    let level = body.level;
-    let techstack = body.techstack;
-    let amount = body.amount;
-    let userid = body.userid;
-    let useResume = body.useResume;
+    // === PRIMARY SOURCE: Query params (Vapi URL template variables) ===
+    // Since Vapi's apiRequest sends body:{}, we read params from the URL
+    // Tool URL should be: /api/vapi/generate?userid={{userid}}&role={{role}}&...
+    let type: any = qp.type || body.type;
+    let role: any = qp.role || body.role;
+    let level: any = qp.level || body.level;
+    let techstack: any = qp.techstack || body.techstack;
+    let amount: any = qp.amount || body.amount;
+    let userid: any = qp.userid || body.userid;
+    let useResume: any = qp.useResume !== undefined ? qp.useResume !== "false" : body.useResume;
     let toolCallId: string | undefined = undefined;
 
-    // 1. Resolve userid FIRST from server-injected Vapi variables (most reliable)
+
+    // 1. Resolve userid from ALL possible Vapi body locations
     const callObj = body.message?.call || body.call;
-    const vars = callObj?.variableValues || callObj?.assistantOverrides?.variableValues;
-    if (vars) {
-      userid = vars.userid || vars.userId;
-    }
+
+    // Path A: assistantOverrides.variableValues (web SDK path)
+    const vars = callObj?.assistantOverrides?.variableValues
+      || callObj?.variableValues
+      || body.message?.assistantOverrides?.variableValues;
+    if (vars?.userid) userid = vars.userid;
+    if (vars?.userId) userid = vars.userId;
+
+    // Path B: call.metadata
+    const meta = callObj?.metadata || body.message?.metadata;
+    if (meta?.userid) userid = meta.userid;
+    if (meta?.userId) userid = meta.userId;
+
+    // Path C: customer object
+    const customer = callObj?.customer || body.message?.customer;
+    if (customer?.userId) userid = customer.userId;
+
+    console.log("userid after all fallbacks:", userid, "| callObj keys:", callObj ? Object.keys(callObj) : "none");
 
     // 2. Check if it is a Vapi tool call event
     const toolCall = body.message?.toolCalls?.[0] || 
@@ -71,11 +111,17 @@ export async function POST(request: Request) {
     console.log("Extracted params:", { type, role, level, techstack, amount, userid, useResume, toolCallId });
 
     // Fallbacks
-    const finalRole = role || "Software Engineer";
-    const finalLevel = level || "Mid";
-    const finalType = type || "mixed";
+    const finalRole = String(role || "Software Engineer");
+    const finalLevel = String(level || "Mid");
+    
+    // Normalize type to capitalized "Technical" | "Behavioral" | "Mixed"
+    const rawType = String(type || "mixed").toLowerCase();
+    const finalType: "Technical" | "Behavioral" | "Mixed" = 
+      rawType === "technical" ? "Technical" :
+      rawType === "behavioral" ? "Behavioral" : "Mixed";
+
     const finalAmount = Number(amount) || 5;
-    const finalUserId = userid || "";
+    const finalUserId = String(userid || "");
 
     // Fail-closed safety check to prevent orphaned documents without a user ID
     if (!finalUserId) {
@@ -90,9 +136,11 @@ export async function POST(request: Request) {
     if (useResume !== false && finalUserId) {
       const resumeText = await getResumeFromProfile(finalUserId);
       if (resumeText) {
-        const parsedTechstack = techstack 
-          ? (typeof techstack === "string" ? techstack.split(",").map((s: string) => s.trim()) : techstack)
-          : [];
+        const parsedTechstack: string[] = typeof techstack === "string"
+          ? techstack.split(",").map((s: string) => s.trim())
+          : Array.isArray(techstack)
+            ? techstack.map(String)
+            : [];
         const result = await generateResumeBasedQuestions({
           resumeText,
           role: finalRole,
