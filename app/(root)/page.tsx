@@ -14,7 +14,10 @@ import {
 
 import { redirect } from "next/navigation";
 
-async function Home() {
+async function Home({ searchParams }: RouteParams) {
+  const resolvedSearchParams = await searchParams;
+  const page = Number(resolvedSearchParams?.page) || 1;
+
   let session;
   try {
     session = await auth.api.getSession({
@@ -58,7 +61,19 @@ async function Home() {
   ]);
 
   const hasPastInterviews = userInterviews && userInterviews.length > 0;
-  const hasUpcomingInterviews = latestInterviews && latestInterviews.length > 0;
+  
+  // Slicing/Pagination for other users' interviews ("Take Interviews")
+  const ITEMS_PER_PAGE = 6;
+  const totalLatestInterviews = latestInterviews?.length || 0;
+  const totalPages = Math.ceil(totalLatestInterviews / ITEMS_PER_PAGE) || 1;
+  const currentPage = Math.max(1, Math.min(page, totalPages));
+  
+  const paginatedLatestInterviews = (latestInterviews || []).slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  
+  const hasUpcomingInterviews = paginatedLatestInterviews.length > 0;
 
   return (
     <>
@@ -83,7 +98,7 @@ async function Home() {
         <LogoutButton />
       </div>
 
-      {/* Rest of your component remains the same */}
+      {/* CTA section */}
       <section className="card-cta">
         <div className="flex flex-col gap-6 max-w-lg">
           <h2>Get Interview-Ready with AI-Powered Practice & Feedback</h2>
@@ -133,12 +148,12 @@ async function Home() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-6 mt-8">
+      <section className="flex flex-col gap-6 mt-8" id="take-interviews">
         <h2>Take Interviews</h2>
 
         <div className="interviews-section">
           {hasUpcomingInterviews ? (
-            latestInterviews.map((interview) => (
+            paginatedLatestInterviews.map((interview) => (
               <InterviewCard
                 key={interview.id}
                 id={interview.id}
@@ -154,6 +169,39 @@ async function Home() {
             <p>There are no interviews available</p>
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-6">
+            <Button
+              asChild
+              variant="outline"
+              className={`bg-dark-200 border-gray-700 text-white ${
+                currentPage <= 1 ? "opacity-50 pointer-events-none" : "hover:bg-dark-300"
+              }`}
+            >
+              <Link href={`/?page=${currentPage - 1}#take-interviews`}>
+                Previous
+              </Link>
+            </Button>
+
+            <span className="text-sm text-light-100 font-medium">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <Button
+              asChild
+              variant="outline"
+              className={`bg-dark-200 border-gray-700 text-white ${
+                currentPage >= totalPages ? "opacity-50 pointer-events-none" : "hover:bg-dark-300"
+              }`}
+            >
+              <Link href={`/?page=${currentPage + 1}#take-interviews`}>
+                Next
+              </Link>
+            </Button>
+          </div>
+        )}
       </section>
     </>
   );

@@ -2,7 +2,7 @@ import Agent from '@/components/Agent';
 import DisplayTechicons from '@/components/DisplayTechicons';
 import { getCurrentUser } from '@/lib/auth';
 import { getInterviewById, getFeedbackByInterviewId } from '@/lib/actions/general.action';
-import { getRandomInterviewCover } from '@/lib/utils';
+import { getTechLogos } from '@/lib/utils';
 import Image from 'next/image';
 import { redirect } from 'next/navigation'
 import React from 'react'
@@ -20,6 +20,9 @@ const Page = async ({ params }: RouteParams) => {
     const interview = await getInterviewById(id);
     if (!interview) redirect('/')
     
+    const techIcons = await getTechLogos(interview.techstack || []);
+    const logoUrl = techIcons.length > 0 ? techIcons[0].url : '/tech.svg';
+
     // Fetch feedback if you need it
     const feedback = await getFeedbackByInterviewId({
         interviewId: id,
@@ -31,13 +34,16 @@ const Page = async ({ params }: RouteParams) => {
             <div className='flex flex-col gap-4 w-full'>
                 <div className='flex flex-row gap-4 items-center justify-between max-sm:flex-col'>
                     <div className='flex flex-row gap-4 items-center flex-wrap'>
-                        <Image 
-                            src={getRandomInterviewCover()} 
-                            alt="cover-image" 
-                            width={40} 
-                            height={40}
-                            className="rounded-full object-cover size-[40px]" 
-                        />
+                        <div className="flex items-center justify-center size-[40px] rounded-full p-1 bg-dark-200 border border-border/30">
+                            <Image 
+                                src={logoUrl} 
+                                alt="cover-image" 
+                                width={32} 
+                                height={32}
+                                className="object-contain size-[32px]" 
+                            />
+                        </div>
+
                         <h3 className='capitalize'>{interview.role}</h3>
                         <DisplayTechicons techStack={interview.techstack}/>
                         {interview.resumeUsed && (

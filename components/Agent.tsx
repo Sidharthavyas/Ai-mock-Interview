@@ -109,7 +109,12 @@ const Agent = ({
       if (type === "generate") {
         router.push("/");
       } else {
-        handleGenerateFeedback(messages);
+        if (messages && messages.length > 0) {
+          handleGenerateFeedback(messages);
+        } else {
+          console.log("Skipping feedback generation: transcript is empty");
+          router.push("/");
+        }
       }
     }
   }, [messages, callStatus, feedbackId, interviewId, router, type, userId]);
