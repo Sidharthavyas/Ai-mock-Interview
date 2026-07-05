@@ -75,7 +75,7 @@ export async function POST(request: Request) {
                      body.toolCalls?.[0] || 
                      body.toolCallList?.[0];
 
-    let args: any = {};
+    let args: any = body; // fallback for direct apiRequest JSON body
     if (toolCall) {
       toolCallId = toolCall.id;
       const rawArgs = toolCall.function?.arguments || 
