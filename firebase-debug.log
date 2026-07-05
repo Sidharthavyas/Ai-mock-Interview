@@ -30,3 +30,28 @@
 [debug] [2026-07-05T06:12:57.084Z] > refreshing access token with scopes: []
 [debug] [2026-07-05T06:12:57.085Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
 [debug] [2026-07-05T06:12:57.085Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-05T06:12:58.678Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-07-05T06:12:58.678Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-05T06:12:58.679Z] [iam] error while checking permissions, command may fail: Request to https://cloudresourcemanager.googleapis.com/v1/projects/ai-interview-app-28b04:testIamPermissions had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+[info] 
+[info] === Deploying to 'ai-interview-app-28b04'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-07-05T06:12:58.685Z] Checked if tokens are valid: false, expires at: 1761591121610
+[debug] [2026-07-05T06:12:58.685Z] Checked if tokens are valid: false, expires at: 1761591121610
+[debug] [2026-07-05T06:12:58.685Z] > refreshing access token with scopes: []
+[debug] [2026-07-05T06:12:58.685Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-05T06:12:58.685Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-05T06:13:00.180Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-07-05T06:13:00.180Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-05T06:13:00.180Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/ai-interview-app-28b04/databases/(default) [none]
+[debug] [2026-07-05T06:13:06.093Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/ai-interview-app-28b04/databases/(default) 401
+[debug] [2026-07-05T06:13:06.094Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/ai-interview-app-28b04/databases/(default) {"error":{"code":401,"message":"Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.","status":"UNAUTHENTICATED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"service":"firestore.googleapis.com","method":"google.firestore.admin.v1.FirestoreAdmin.GetDatabase"}}]}}
+[debug] [2026-07-05T06:13:06.094Z] Got a 401 Unauthenticated error for a call that required authentication. Refreshing tokens.
+[debug] [2026-07-05T06:13:06.094Z] Checked if tokens are valid: false, expires at: 1761591121610
+[debug] [2026-07-05T06:13:06.094Z] Checked if tokens are valid: false, expires at: 1761591121610
+[debug] [2026-07-05T06:13:06.094Z] > refreshing access token with scopes: []
+[debug] [2026-07-05T06:13:06.094Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-05T06:13:06.094Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
