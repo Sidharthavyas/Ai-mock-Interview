@@ -87,6 +87,9 @@ export async function generateResumeBasedQuestions({
         google: {
           structuredOutputs: false,
         },
+        groq: {
+          structuredOutputs: false,
+        },
       },
       prompt: `
 You are preparing questions for a live voice mock interview.
@@ -118,6 +121,7 @@ INSTRUCTIONS:
    by a voice agent) — no markdown, no "Q1:", no parenthetical asides.
 5. Order questions from warm-up (easier, resume-grounded) to more
    challenging (technical depth / behavioral pressure).
+6. Output the final result in JSON format conforming to the schema.
       `.trim(),
       system:
         "You are an expert technical interviewer generating personalized interview questions from a candidate's resume.",
@@ -196,6 +200,9 @@ export async function analyzeResumeAgainstJD({
         google: {
           structuredOutputs: false,
         },
+        groq: {
+          structuredOutputs: false,
+        },
       },
       prompt: `
 You are an experienced technical recruiter evaluating fit between a resume
@@ -228,6 +235,7 @@ Evaluate:
    tips like "use more keywords."
 6. summary: 2-3 sentences, direct and useful, as if telling the candidate
    the truth about their chances before they apply.
+7. Output the final result in JSON format conforming to the schema.
       `.trim(),
       system:
         "You are a professional technical recruiter evaluating resume-to-job-description fit. Be honest, not encouraging.",
