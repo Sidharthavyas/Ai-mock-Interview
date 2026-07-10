@@ -31,17 +31,11 @@
  */
 
 import { generateObject, generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { getAIModel } from "@/lib/model";
 import { z } from "zod";
 import { db } from "@/firebase/admin";
 
-// NOTE: structuredOutputs: false matches the working config already proven
-// out in general.action.ts's createFeedback() — Gemini's native structured
-// output mode has had schema-validation quirks with generateObject in this
-// project, so we stick with the same disabled setting here for consistency.
-const MODEL = google("gemini-3.5-flash", {
-  structuredOutputs: false,
-});
+const MODEL = getAIModel();
 
 // ─────────────────────────────────────────────────────────────────────────
 // 1. RESUME TEXT EXTRACTION (Moved to server-only helper lib/pdf-parser.ts to prevent browser crashes)
@@ -89,6 +83,11 @@ export async function generateResumeBasedQuestions({
     const { object } = await generateObject({
       model: MODEL,
       schema: resumeQuestionsSchema,
+      providerOptions: {
+        google: {
+          structuredOutputs: false,
+        },
+      },
       prompt: `
 You are preparing questions for a live voice mock interview.
 
@@ -193,6 +192,11 @@ export async function analyzeResumeAgainstJD({
     const { object } = await generateObject({
       model: MODEL,
       schema: resumeAnalysisSchema,
+      providerOptions: {
+        google: {
+          structuredOutputs: false,
+        },
+      },
       prompt: `
 You are an experienced technical recruiter evaluating fit between a resume
 and a job description. Be honest and specific — do not inflate the score

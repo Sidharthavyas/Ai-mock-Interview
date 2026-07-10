@@ -134,13 +134,12 @@ export const interviewer: CreateAssistantDTO = {
     language: "en",
   },
   voice: {
-    provider: "cartesia",
-    voiceId: "248be419-f293-4fce-bc9c-3c59187dda40",
-    model: "sonic-english",
+    provider: "vapi",
+    voiceId: "Savannah",
   },
   model: {
     provider: "openai",
-    model: "gpt-4",
+    model: "gpt-4o-mini",
     messages: [
       {
         role: "system",

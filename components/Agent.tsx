@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { vapi } from "@/lib/vapi.sdk";
@@ -34,14 +35,17 @@ const Agent = ({
   const [messages, setMessages] = useState<SavedMessage[]>([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastMessage, setLastMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const wasCallActive = useRef(false);
 
   useEffect(() => {
     const onCallStart = () => {
       setCallStatus(CallStatus.ACTIVE);
+      wasCallActive.current = true;
     };
 
     const onCallEnd = () => {
-      setCallStatus(CallStatus.FINISHED);
+      setCallStatus(wasCallActive.current ? CallStatus.FINISHED : CallStatus.INACTIVE);
     };
 
     const onMessage = (message: Message) => {
@@ -61,8 +65,10 @@ const Agent = ({
       setIsSpeaking(false);
     };
 
-    const onError = (error: Error) => {
+    const onError = (error: any) => {
       console.log("Error:", error);
+      const msg = error?.message || error?.error || (typeof error === "string" ? error : "An error occurred with Vapi call");
+      setErrorMessage(msg);
     };
 
     vapi.on("call-start", onCallStart);
@@ -121,6 +127,8 @@ const Agent = ({
 
   const handleCall = async () => {
     setCallStatus(CallStatus.CONNECTING);
+    setErrorMessage(null);
+    wasCallActive.current = false;
 
     try {
       if (type === "generate") {
@@ -207,6 +215,15 @@ const Agent = ({
             >
               {lastMessage}
             </p>
+          </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="w-full flex justify-center">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg max-w-md w-full text-center flex items-center justify-center gap-2 animate-fadeIn">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>{errorMessage}</span>
           </div>
         </div>
       )}

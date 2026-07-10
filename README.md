@@ -13,7 +13,7 @@ An advanced, real-time AI-powered voice mock interview platform designed to help
   - **Deepgram** for high-accuracy speech-to-text transcription.
   - **ElevenLabs** for human-like, low-latency text-to-speech voice synthesis.
   - **Vapi Agent Engine** to orchestrate real-time conversation and conversational state.
-- **Instant AI Report Card**: Post-interview evaluation using the **Vercel AI SDK** with **Gemini 3.5 Flash** to analyze transcripts and score candidates from 0 to 100 on communication skills, technical knowledge, problem solving, cultural fit, and confidence/clarity.
+- **Instant AI Report Card**: Post-interview evaluation using the **Vercel AI SDK** with **Groq (Llama 3.3)** or **Gemini 2.0 Flash** to analyze transcripts and score candidates from 0 to 100 on communication skills, technical knowledge, problem solving, cultural fit, and confidence/clarity.
 - **Personalized Feedback Page**: Displays strengths, areas for improvement, overall score, final assessment paragraph, and category score breakdowns.
 - **Interactive Dashboard**: Displays upcoming mock interview configurations and lists taken interviews alongside their ratings, final assessment summaries, and links to report cards.
 - **Secure Authentication**: Power-packed with **Better Auth**, supporting standard email/password registration as well as OAuth login through GitHub and Google.
@@ -95,6 +95,9 @@ FIREBASE_DATABASE_URL=https://your-firebase-project-id.firebaseio.com
 
 # Google Generative AI (Gemini API Key)
 GOOGLE_GENERATIVE_AI_API_KEY=your-gemini-api-key
+
+# Groq API Key
+GROQ_API_KEY=your-groq-api-key
 
 # VAPI Credentials
 NEXT_PUBLIC_VAPI_WEB_TOKEN=your-vapi-web-token
@@ -197,7 +200,7 @@ interface ResumeAnalysis {
 
 ### 1. Interview Questions Generation API
 - **Endpoint**: `POST /api/vapi/generate`
-- **Role**: Invoked when configuring a new mock interview. If the user has uploaded a resume, it extracts the resume plain text and calls `generateResumeBasedQuestions` with **`gemini-3.5-flash`** to structure personalized, resume-grounded questions. Otherwise, it falls back to generating generic questions matching the selected role, level, and tech stack.
+- **Role**: Invoked when configuring a new mock interview. If the user has uploaded a resume, it extracts the resume plain text and calls `generateResumeBasedQuestions` using the dynamically resolved AI model (Groq Llama 3.3 or Gemini 2.0 Flash) to structure personalized, resume-grounded questions. Otherwise, it falls back to generating generic questions matching the selected role, level, and tech stack.
 - **Format**: Returns JSON-parsed array of strings: `["Question 1", "Question 2", ...]`.
 
 ### 2. Resume Text Extraction & Upload API
@@ -206,7 +209,7 @@ interface ResumeAnalysis {
 
 ### 3. Feedback Synthesizer Server Action
 - **Action**: `createFeedback` in `lib/actions/general.action.ts`
-- **Role**: Triggered once the user disconnects the call. It captures the interview transcript from Vapi events, formats the transcript, and invokes Vercel AI SDK `generateObject` with **`gemini-3.5-flash`** enforcing the Zod schema (`feedbackSchema`).
+- **Role**: Triggered once the user disconnects the call. It captures the interview transcript from Vapi events, formats the transcript, and invokes Vercel AI SDK `generateObject` using the dynamically resolved AI model (Groq Llama 3.3 or Gemini 2.0 Flash) enforcing the Zod schema (`feedbackSchema`).
 - **Grading Schema**:
   - Validates exact categories: *Communication Skills*, *Technical Knowledge*, *Problem Solving*, *Cultural Fit*, *Confidence and Clarity*.
   - Compiles specific strengths, improvement directives, and a summary paragraph of performance.

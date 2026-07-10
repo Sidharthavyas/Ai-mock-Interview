@@ -1,7 +1,7 @@
 "use server";
 
 import { generateObject } from "ai";
-import { google } from "@ai-sdk/google";
+import { getAIModel } from "@/lib/model";
 
 import { db } from "@/firebase/admin";
 import { feedbackSchema } from "@/constants";
@@ -18,10 +18,13 @@ export async function createFeedback(params: CreateFeedbackParams) {
       .join("");
 
     const { object } = await generateObject({
-      model: google("gemini-3.5-flash", {
-        structuredOutputs: false,
-      }),
+      model: getAIModel(),
       schema: feedbackSchema,
+      providerOptions: {
+        google: {
+          structuredOutputs: false,
+        },
+      },
       prompt: `
         You are an AI interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories. Be thorough and detailed in your analysis. Don't be lenient with the candidate. If there are mistakes or areas for improvement, point them out.
         
