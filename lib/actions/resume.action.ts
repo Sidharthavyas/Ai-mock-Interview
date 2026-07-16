@@ -30,12 +30,9 @@
  * general.action.ts. `pdf-parse` is the only new one, for resume text extraction.)
  */
 
-import { generateObject, generateText } from "ai";
-import { getAIModel } from "@/lib/model";
+import { generateObjectWithFallback } from "@/lib/model";
 import { z } from "zod";
 import { db } from "@/firebase/admin";
-
-const MODEL = getAIModel();
 
 // ─────────────────────────────────────────────────────────────────────────
 // 1. RESUME TEXT EXTRACTION (Moved to server-only helper lib/pdf-parser.ts to prevent browser crashes)
@@ -80,8 +77,7 @@ export async function generateResumeBasedQuestions({
   { success: true; questions: string[] } | { success: false; error: string }
 > {
   try {
-    const { object } = await generateObject({
-      model: MODEL,
+    const { object } = await generateObjectWithFallback({
       schema: resumeQuestionsSchema,
       providerOptions: {
         google: {
@@ -193,8 +189,7 @@ export async function analyzeResumeAgainstJD({
   | { success: false; error: string }
 > {
   try {
-    const { object } = await generateObject({
-      model: MODEL,
+    const { object } = await generateObjectWithFallback({
       schema: resumeAnalysisSchema,
       providerOptions: {
         google: {

@@ -1,7 +1,6 @@
 "use server";
 
-import { generateObject } from "ai";
-import { getAIModel } from "@/lib/model";
+import { generateObjectWithFallback } from "@/lib/model";
 
 import { db } from "@/firebase/admin";
 import { feedbackSchema } from "@/constants";
@@ -17,8 +16,7 @@ export async function createFeedback(params: CreateFeedbackParams) {
       )
       .join("");
 
-    const { object } = await generateObject({
-      model: getAIModel(),
+    const { object } = await generateObjectWithFallback({
       schema: feedbackSchema,
       providerOptions: {
         google: {

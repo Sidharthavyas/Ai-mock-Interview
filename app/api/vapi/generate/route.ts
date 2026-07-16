@@ -1,5 +1,4 @@
-import { generateText } from "ai";
-import { getAIModel } from "@/lib/model";
+import { generateTextWithFallback } from "@/lib/model";
 
 import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
@@ -171,8 +170,7 @@ export async function POST(request: Request) {
         ? techstack.join(", ") 
         : (techstack ? String(techstack) : "");
 
-      const { text: questions } = await generateText({
-        model: getAIModel(),
+      const { text: questions } = await generateTextWithFallback({
         prompt: `Prepare questions for a job interview.
           The job role is ${finalRole}.
           The job experience level is ${finalLevel}.
