@@ -42,6 +42,7 @@ export async function generateObjectWithFallback<T>(params: any): Promise<any> {
       return await aiGenerateObject({
         ...params,
         model: google("gemini-3.5-flash"),
+        maxRetries: 0,
         providerOptions: {
           ...params.providerOptions,
           google: googleProviderOptions,
@@ -65,6 +66,7 @@ export async function generateObjectWithFallback<T>(params: any): Promise<any> {
       return await aiGenerateObject({
         ...params,
         model: google("gemini-3.1-flash-lite"),
+        maxRetries: 0,
         providerOptions: {
           ...params.providerOptions,
           google: googleProviderOptions,
@@ -118,6 +120,7 @@ export async function generateTextWithFallback(params: any): Promise<any> {
       return await aiGenerateText({
         ...params,
         model: google("gemini-3.5-flash"),
+        maxRetries: 0,
       });
     } catch (error) {
       console.error("Gemini 3.5 Flash generateText failed, trying Gemini 3.1 Flash Lite:", error);
@@ -129,6 +132,7 @@ export async function generateTextWithFallback(params: any): Promise<any> {
       return await aiGenerateText({
         ...params,
         model: google("gemini-3.1-flash-lite"),
+        maxRetries: 0,
       });
     } catch (error) {
       console.error("Gemini 3.1 Flash Lite generateText failed, falling back to Groq:", error);
